@@ -3,15 +3,10 @@
 import { adminDb } from "@/firebaseAdmin";
 import { auth } from "@clerk/nextjs/server";
 import { generateLangchainCompletion } from "@/lib/langchain";
+import { Message } from "@/components/Chat";
 
 const FREE_LIMIT = 3;
 const PRO_LIMIT = 100;
-
-type Message = {
-  role: string;
-  message: string;
-  createdAt: Date;
-};
 
 export async function askQuestion(id: string, question: string) {
   const { userId } = await auth();
@@ -19,14 +14,14 @@ export async function askQuestion(id: string, question: string) {
     throw new Error("Unauthorized");
   }
 
-  const ref = await adminDb
+  const chatRef = await adminDb
     .collection("users")
     .doc(userId)
     .collection("files")
     .doc(id)
     .collection("chat");
 
-  const chatSnapshot = await ref.get();
+  const chatSnapshot = await chatRef.get();
   const userMessages = chatSnapshot.docs.filter(
     (doc) => doc.data().user === "human"
   );
@@ -37,7 +32,7 @@ export async function askQuestion(id: string, question: string) {
     createdAt: new Date(),
   };
 
-  await ref.add(userMessage);
+  await chatRef.add(userMessage);
 
   //generate AI response
   const reply = await generateLangchainCompletion(id, question);
@@ -48,7 +43,7 @@ export async function askQuestion(id: string, question: string) {
     createdAt: new Date(),
   };
 
-  await ref.add(aiMessage);
+  await chatRef.add(aiMessage);
 
   return { success: true, messages: null };
 }
