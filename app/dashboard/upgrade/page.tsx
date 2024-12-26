@@ -3,11 +3,19 @@
 
 import { Button } from "@/components/ui/button";
 import { CheckIcon } from "lucide-react";
-import React from "react";
+import React, { startTransition } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import useSubscription from "@/hooks/useSubscription";
 import { useTransition } from "react";
+import getStripe from "@/lib/stripe-js";
+import { create } from "domain";
+import { createCheckoutSession } from "@/actions/createCheckoutSession";
+
+export type UserDetails = {
+  email: string;
+  name: string;
+};
 
 function PricingPage() {
   const { user } = useUser();
@@ -16,6 +24,31 @@ function PricingPage() {
 
   //pull in the user's subscription
   const { hasActiveMembership, loading } = useSubscription();
+
+  const handleUpgrade = () => {
+    if (!user) return;
+
+    const userDetails: UserDetails = {
+      email: user.primaryEmailAddress
+        ? user.primaryEmailAddress.toString()
+        : "",
+      name: user.fullName!,
+    };
+
+    startTransition(async () => {
+      const stripe = await getStripe();
+
+      if (hasActiveMembership) {
+        //create stripe portal
+      }
+
+      const sessionId = await createCheckoutSession(userDetails);
+
+      await stripe?.redirectToCheckout({
+        sessionId,
+      });
+    });
+  };
 
   return (
     <div>
@@ -87,6 +120,7 @@ function PricingPage() {
             <Button
               className="bg-indigo-600 w-full text-white shadow-sm hover:bg-indigo-500 mt-6 block rounded-md px-3 py-2 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 "
               disabled={loading || isPending}
+              onClick={handleUpgrade}
             >
               {isPending || loading
                 ? "loadinng..."
