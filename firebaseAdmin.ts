@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { initializeApp, getApp, App, getApps, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 
 const serviceKey = require("@/service_key.json");
 let app: App;
@@ -15,4 +16,5 @@ if (getApps().length === 0) {
 }
 
 const adminDb = getFirestore(app);
-export { app as adminApp, adminDb };
+const adminStorage = getStorage(app);
+export { app as adminApp, adminDb, adminStorage };

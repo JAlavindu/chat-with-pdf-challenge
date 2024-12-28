@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import useUpload, { StatusText } from "@/hooks/useUpload";
 import { useRouter } from "next/navigation";
+import useSubscription from "@/hooks/useSubscription";
+import { useToast } from "@/hooks/use-toast";
 
 function FileUploader() {
   const { progress, status, fileId, handleUpload } = useUpload() as {
@@ -20,6 +22,7 @@ function FileUploader() {
     fileId: string | null;
     handleUpload: (file: File) => Promise<void>;
   };
+  const { isOverFileLimit, filesLoading } = useSubscription();
   const router = useRouter();
 
   useEffect(() => {
@@ -34,7 +37,9 @@ function FileUploader() {
     console.log(acceptedFiles);
     const file = acceptedFiles[0];
     if (file) {
-      await handleUpload(file);
+      if (!isOverFileLimit && !filesLoading) {
+        await handleUpload(file);
+      }
     } else {
       //do nothing...
     }

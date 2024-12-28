@@ -11,6 +11,7 @@ import { useTransition } from "react";
 import getStripe from "@/lib/stripe-js";
 import { create } from "domain";
 import { createCheckoutSession } from "@/actions/createCheckoutSession";
+import { createStripePortal } from "@/actions/createStripePortal";
 
 export type UserDetails = {
   email: string;
@@ -40,6 +41,8 @@ function PricingPage() {
 
       if (hasActiveMembership) {
         //create stripe portal
+        const stripePortalUrl = await createStripePortal();
+        return router.push(stripePortalUrl);
       }
 
       const sessionId = await createCheckoutSession(userDetails);

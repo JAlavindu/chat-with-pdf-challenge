@@ -5,8 +5,8 @@ import { auth } from "@clerk/nextjs/server";
 import { generateLangchainCompletion } from "@/lib/langchain";
 import { Message } from "@/components/Chat";
 
-const FREE_LIMIT = 3;
-const PRO_LIMIT = 100;
+const PRO_LIMIT = 2;
+const FREE_LIMIT = 2;
 
 export async function askQuestion(id: string, question: string) {
   const { userId } = await auth();
@@ -25,6 +25,27 @@ export async function askQuestion(id: string, question: string) {
   const userMessages = chatSnapshot.docs.filter(
     (doc) => doc.data().user === "human"
   );
+
+  const useRef = await adminDb.collection("users").doc(userId!).get();
+
+  if (!useRef.data()?.hasActiveMembership) {
+    if (userMessages.length >= FREE_LIMIT) {
+      return {
+        success: false,
+        messages: `You'll need to upgrade to PRO to ask more than ${FREE_LIMIT} questions`,
+      };
+    }
+  }
+
+  //check if user is on PRO plan and has asked more than 100 questions
+  if (useRef.data()?.hasActiveMembership) {
+    if (userMessages.length >= PRO_LIMIT) {
+      return {
+        success: false,
+        messages: `You've reached the limit of 100 questions for the month`,
+      };
+    }
+  }
 
   const userMessage: Message = {
     role: "human",
